@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experience fit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f2f4ef; --surface: #fbfcf9; --ink: #1f2a24; --muted: #5c6b62; --line: #d3dad3;
+    --band: #a6d1b5; --you: #1f4fd6; --error: #b3261e;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141a16; --surface: #1a211c; --ink: #e4ebe5; --muted: #9aa99f; --line: #313d36; --band: #2f6b47; --you: #8aa6ff; --error: #ffb4ab; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  ::selection { background: var(--band); color: var(--ink); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 0.9375rem/1.6 "Schibsted Grotesk", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 56rem; margin: 0 auto; padding: 2.5rem 1.25rem 6rem; }
+  a, .link { color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  a:hover, .link:hover { color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--you); outline-offset: 2px; border-radius: 4px; }
+
+  header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3.5rem; }
+  h1 { font-size: 1rem; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+
+  form { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem 1.25rem; }
+  .field { display: grid; gap: 0.5rem; align-content: start; min-width: 0; }
+  label.name { font-weight: 500; }
+  textarea {
+    width: 100%; height: 15rem; resize: vertical; font: inherit; color: var(--ink); caret-color: var(--you);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0.75rem 0.875rem;
+    scrollbar-width: thin; scrollbar-color: var(--line) transparent; transition: border-color 150ms ease-out;
+  }
+  textarea::placeholder { color: var(--muted); }
+  textarea:focus { outline: none; border-color: var(--ink); }
+  .drop textarea { border-style: dashed; border-color: var(--you); }
+  .file { display: none; align-items: center; justify-content: space-between; gap: 1rem; height: 15rem; padding: 0.75rem 0.875rem; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+  .has-file .file { display: flex; }
+  .has-file textarea, .has-file .upload { display: none; }
+  .file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .link { font: inherit; font-size: 0.875rem; background: none; border: 0; padding: 0; cursor: pointer; justify-self: start; }
+  input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+  .actions { grid-column: 1 / -1; display: flex; align-items: center; gap: 1.25rem; }
+  button.primary { font: inherit; font-weight: 600; color: var(--bg); background: var(--ink); border: 0; border-radius: 8px; padding: 0.625rem 1.25rem; cursor: pointer; transition: opacity 150ms ease-out; }
+  button.primary:hover { opacity: 0.88; }
+  button.primary:disabled { opacity: 0.5; cursor: progress; }
+  .error { margin: 0; color: var(--error); }
+
+  #result { margin-top: 4.5rem; padding-top: 2.5rem; border-top: 1px solid var(--line); }
+  .verdict { display: flex; align-items: flex-end; gap: 2rem; flex-wrap: wrap; }
+  .score { font-size: clamp(4rem, 12vw, 6rem); font-weight: 600; line-height: 0.8; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+  .score small { font-size: 0.3em; font-weight: 500; letter-spacing: 0; color: var(--muted); margin-left: 0.1em; }
+  .ruler { flex: 1 1 22rem; position: relative; height: 4.25rem; margin-inline: 0.6rem; }
+  .track { position: absolute; inset: 1.4rem 0 auto; height: 1.25rem; border-radius: 4px; background: var(--line); }
+  .band { position: absolute; top: 0; bottom: 0; background: var(--band); border-radius: 4px; font-size: 0.75rem; font-weight: 500; line-height: 1.25rem; padding-left: 0.5rem; white-space: nowrap; }
+  .band.open { border-radius: 4px 0 0 4px; mask-image: linear-gradient(to right, #000 75%, transparent); }
+  .you { position: absolute; top: 0.25rem; height: 2.4rem; width: 2px; margin-left: -1px; background: var(--you); transition: left 900ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .you span { position: absolute; top: -0.3rem; left: 7px; white-space: nowrap; font-size: 0.75rem; font-weight: 600; color: var(--you); }
+  .tick { position: absolute; top: 2.95rem; font-size: 0.75rem; color: var(--muted); transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+  .reasons { margin: 2.5rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.5rem; max-width: 62ch; }
+  details { margin-top: 2.5rem; }
+  summary { cursor: pointer; color: var(--muted); font-weight: 500; width: max-content; }
+  summary:hover { color: var(--ink); }
+  summary::marker { color: var(--muted); }
+  .table-wrap { overflow-x: auto; margin-top: 1rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  th, td { text-align: left; padding: 0.5rem 1rem 0.5rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 500; color: var(--muted); }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.skip td { color: var(--muted); }
+
+  @media (max-width: 40rem) {
+    form { grid-template-columns: 1fr; }
+    textarea, .file { height: 11rem; }
+    header { margin-bottom: 2.5rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Experience fit</h1>
+    <a href="https://github.com/Rishab-Agrawal/experience-fit">Source</a>
+  </header>
+
+  <form id="form">
+    <div class="field" id="resumeField">
+      <label class="name" for="resumeText">Resume</label>
+      <textarea id="resumeText" placeholder="Paste text or drop a PDF"></textarea>
+      <div class="file"><span id="fileName"></span><button type="button" class="link" id="removeFile">Remove</button></div>
+      <label class="link upload" for="resumePdf">Upload PDF</label>
+      <input id="resumePdf" type="file" accept="application/pdf">
+    </div>
+    <div class="field">
+      <label class="name" for="job">Job posting</label>
+      <textarea id="job" placeholder="Paste a link or the posting text"></textarea>
+    </div>
+    <div class="actions">
+      <button class="primary" id="submit">Check fit</button>
+      <p class="error" id="error" role="alert" hidden></p>
+    </div>
+  </form>
+
+  <section id="result" aria-live="polite" hidden></section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+let pdf = null;
+
+function setFile(file) {
+  pdf = file;
+  $("fileName").textContent = file ? file.name : "";
+  $("resumeField").classList.toggle("has-file", !!file);
+  if (!file) $("resumePdf").value = "";
+}
+$("resumePdf").addEventListener("change", (e) => setFile(e.target.files[0] ?? null));
+$("removeFile").addEventListener("click", () => setFile(null));
+const field = $("resumeField");
+field.addEventListener("dragover", (e) => { e.preventDefault(); field.classList.add("drop"); });
+field.addEventListener("dragleave", () => field.classList.remove("drop"));
+field.addEventListener("drop", (e) => {
+  e.preventDefault();
+  field.classList.remove("drop");
+  const file = e.dataTransfer.files[0];
+  if (file?.type === "application/pdf") setFile(file);
+});
+
+const base64 = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result.split(",")[1]);
+  reader.onerror = reject;
+  reader.readAsDataURL(file);
+});
+
+$("form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const job = $("job").value.trim();
+  const body = {
+    resumePdf: pdf ? await base64(pdf) : undefined,
+    resumeText: pdf ? undefined : $("resumeText").value.trim() || undefined,
+    [/^https?:\/\/\S+$/.test(job) ? "jobUrl" : "jobText"]: job || undefined,
+  };
+  $("error").hidden = true;
+  $("submit").disabled = true;
+  $("submit").textContent = "Checking…";
+  try {
+    const res = await fetch("/api/match", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    render(data);
+  } catch (e) {
+    $("error").textContent = e.message;
+    $("error").hidden = false;
+  } finally {
+    $("submit").disabled = false;
+    $("submit").textContent = "Check fit";
+  }
+});
+
+function render({ score, years, minYears, maxYears, reasons, resume, job }) {
+  const end = Math.max(10, Math.ceil(Math.max(years, maxYears ?? minYears) + 2));
+  const pct = (y) => `${(Math.min(y, end) / end) * 100}%`;
+  const step = end > 14 ? 5 : 2;
+  const ticks = Array.from({ length: Math.floor(end / step) + 1 }, (_, i) => i * step);
+  const range = `${minYears}${maxYears === null ? "+" : `–${maxYears}`}`;
+  const counted = (p) => job.family === "other" || p.family === job.family;
+
+  $("result").innerHTML = `
+    <div class="verdict">
+      <div class="score">${score}<small>%</small></div>
+      <div class="ruler" role="img" aria-label="${esc(`You have ${years} relevant years; the posting asks for ${range}`)}">
+        <div class="track"><div class="band${maxYears === null ? " open" : ""}" style="left:${pct(minYears)};right:${maxYears === null ? 0 : `calc(100% - ${pct(maxYears)})`}">${range} yrs</div></div>
+        <div class="you" style="left:0"><span>you, ${years}</span></div>
+        ${ticks.map((t) => `<span class="tick" style="left:${pct(t)}">${t}</span>`).join("")}
+      </div>
+    </div>
+    <ul class="reasons">${reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>
+    <details>
+      <summary>What was counted</summary>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Role</th><th>Dates</th><th>Counted</th></tr></thead>
+        <tbody>${resume.positions.map((p) => `
+          <tr class="${counted(p) ? "" : "skip"}">
+            <td>${esc(p.title)}, ${esc(p.company)}</td>
+            <td class="num">${esc(p.start)} to ${esc(p.end ?? "now")}</td>
+            <td>${!counted(p) ? `No, ${esc(p.family.replace("_", " "))}` : p.kind === "part_time" || p.kind === "internship" ? `Half, ${esc(p.kind.replace("_", "-"))}` : "Yes"}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table></div>
+    </details>`;
+  $("result").hidden = false;
+  const marker = $("result").querySelector(".you");
+  requestAnimationFrame(() => requestAnimationFrame(() => (marker.style.left = pct(years))));
+  $("result").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
+</script>
+</body>
+</html>

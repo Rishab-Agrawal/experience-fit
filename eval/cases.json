@@ -1,0 +1,57 @@
+[
+  {
+    "name": "range",
+    "text": "Backend Engineer\nRequirements:\n- 3-5 years of professional software engineering experience\n- Strong Python and SQL",
+    "expect": { "family": "software_engineering", "minYears": 3, "maxYears": 5, "required": true, "flexible": false }
+  },
+  {
+    "name": "explicit exception",
+    "text": "Senior Platform Engineer\nYou have 5+ years of backend experience. Exceptional candidates with fewer years will also be considered.",
+    "expect": { "seniority": "senior", "minYears": 5, "maxYears": null, "flexible": true }
+  },
+  {
+    "name": "preferred",
+    "text": "Data Engineer\nNice to have: ideally 4+ years building data pipelines in Spark or Flink.",
+    "expect": { "family": "software_engineering", "minYears": 4, "required": false }
+  },
+  {
+    "name": "degree paths",
+    "text": "Software Engineer II\nMinimum qualifications: BS in Computer Science with 5+ years of industry experience, or MS with 3+ years.",
+    "expect": { "paths": [{ "degree": "bachelors", "minYears": 5 }, { "degree": "masters", "minYears": 3 }] }
+  },
+  {
+    "name": "title only",
+    "text": "Senior Software Engineer, Payments\nYou will design and own the services that move money for millions of users. You know distributed systems and care about correctness.",
+    "expect": { "seniority": "senior", "experience": null }
+  },
+  {
+    "name": "new grad",
+    "text": "Software Engineer, New Grad 2027\nFor students graduating between December 2026 and June 2027 with a degree in CS or a related field.",
+    "expect": { "seniority": "entry", "experience": null }
+  },
+  {
+    "name": "equivalent experience is about the degree, not years",
+    "text": "Software Engineer\nMinimum qualifications:\n- Bachelor's degree or equivalent practical experience.\n- 2 years of experience with software development in one or more programming languages.",
+    "expect": { "minYears": 2, "flexible": false, "required": true }
+  },
+  {
+    "name": "per-skill sub-requirement",
+    "text": "Staff Engineer\n8+ years of software engineering experience, including 3+ years leading technical projects.",
+    "expect": { "seniority": "staff", "minYears": 8 }
+  },
+  {
+    "name": "apply anyway boilerplate",
+    "text": "Frontend Engineer\nWhat you bring: 3+ years building React applications.\nDon't meet every single requirement? Studies show people often hold back unless they check every box. If you're excited about this role, we encourage you to apply.",
+    "expect": { "minYears": 3, "flexible": true }
+  },
+  {
+    "name": "product manager",
+    "text": "Product Manager, Growth\n2-4 years of product management experience preferred.",
+    "expect": { "family": "product", "minYears": 2, "maxYears": 4, "required": false }
+  },
+  {
+    "name": "founding engineer",
+    "text": "Founding Engineer\nWhat we're looking for:\n- 3+ years building and shipping production software, ideally at an early-stage startup or in a role with broad ownership\n- Strong full-stack skills, from the database to the UI",
+    "expect": { "family": "software_engineering", "minYears": 3, "required": true }
+  }
+]
