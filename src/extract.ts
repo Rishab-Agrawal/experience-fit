@@ -52,6 +52,9 @@ export const Job = z.object({
             "or encourages applying without meeting every requirement. " +
             "A degree replaceable by 'equivalent experience' is not flexibility on years.",
         ),
+      countsInternships: z
+        .boolean()
+        .describe("true only when the posting explicitly says internships, co-ops, or work during school count toward the years"),
       quote: z.string().describe("The sentence from the posting that states the requirement, verbatim"),
     })
     .nullable()

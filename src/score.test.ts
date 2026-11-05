@@ -24,6 +24,7 @@ const job = (experience: Partial<NonNullable<Job["experience"]>> | null, seniori
     maxYears: null,
     required: true,
     flexible: false,
+    countsInternships: false,
     quote: "",
     ...experience,
   },
@@ -31,22 +32,25 @@ const job = (experience: Partial<NonNullable<Job["experience"]>> | null, seniori
 
 const score = (r: Resume, j: Job) => match(r, j, now).score;
 
-test("overlapping roles count once, internships half, current roles up to now", () => {
-  const positions = [swe("2024-01", "2024-12"), swe("2024-07", "2025-06"), swe("2023-01", "2023-12", "internship"), swe("2026-06", null)];
-  // 2024-01..2025-06 = 18 months, internship 12 × 0.5 = 6, 2026-06..2026-11 = 6 → 30 months
-  assert.equal(yearsOfExperience(positions, [], now), 2.5);
+test("overlapping roles count once, part-time half, internships only if the posting counts them", () => {
+  const positions = [swe("2024-01", "2024-12"), swe("2024-07", "2025-06"), swe("2023-01", "2023-12", "internship"), swe("2026-06", null, "part_time")];
+  // 2024-01..2025-06 = 18 months, part-time 2026-06..2026-11 = 6 × 0.5 = 3, internship 12 or 0
+  assert.equal(yearsOfExperience(positions, [], false, now), 1.75);
+  assert.equal(yearsOfExperience(positions, [], true, now), 2.75);
 });
 
-test("roles started during a bachelor's or master's count half until its final year", () => {
+test("roles started during a bachelor's or master's count as internships until its final year", () => {
   const education: Resume["education"] = [{ degree: "bachelors", start: "2020-09", end: "2024-05" }];
-  // Final year 2023-06..2024-05: 24 student months × 0.5 + 12 → 2 years
-  assert.equal(yearsOfExperience([swe("2021-06", "2024-05")], education, now), 2);
-  assert.equal(yearsOfExperience([swe("2019-06", "2021-05")], education, now), 2); // held before enrolling
-  assert.equal(yearsOfExperience([swe("2021-06", "2024-05")], [{ ...education[0], degree: "phd" }], now), 3);
+  // Final year 2023-06..2024-05 counts; the 24 months before it count only when the posting counts internships
+  assert.equal(yearsOfExperience([swe("2021-06", "2024-05")], education, false, now), 1);
+  assert.equal(yearsOfExperience([swe("2021-06", "2024-05")], education, true, now), 3);
+  assert.equal(yearsOfExperience([swe("2021-06", "2024-05", "part_time")], education, true, now), 1.5);
+  assert.equal(yearsOfExperience([swe("2019-06", "2021-05")], education, false, now), 2); // held before enrolling
+  assert.equal(yearsOfExperience([swe("2021-06", "2024-05")], [{ ...education[0], degree: "phd" }], false, now), 3);
   const r: Resume = { highestDegree: "bachelors", education, positions: [swe("2021-06", "2024-05"), swe("2022-01", "2022-12")] };
   assert.deepEqual(
     match(r, job({}), now).positions.map((p) => p.counted),
-    ["Half while studying, full from Jun 2023","Half, while studying"],
+    ["Yes from Jun 2023, not while studying", "No, while studying"],
   );
 });
 

@@ -4,7 +4,7 @@ type Position = Resume["positions"][number];
 type Degree = Resume["highestDegree"];
 
 // ponytail: hand-set priors. Calibrate against reply/interview rates per experience gap once outcome data is joined in.
-const KIND_WEIGHT: Record<Position["kind"], number> = { full_time: 1, contract: 1, part_time: 0.5, internship: 0.5 };
+const PART_TIME_WEIGHT = 0.5;
 const UNDER_TOLERANCE = { required: 0.6, preferred: 0.9, flexibleBonus: 0.3 };
 const OVER_TOLERANCE = 1.5;
 
@@ -43,13 +43,23 @@ function studentUntil(p: Position, education: Resume["education"]): number {
   );
 }
 
-/** Experience-weighted years, counting each calendar month once even when roles overlap. */
-export function yearsOfExperience(positions: Position[], education: Resume["education"], now = new Date()): number {
+/**
+ * Experience-weighted years, counting each calendar month once even when roles overlap.
+ * Internships and student work count fully if the posting counts internships, otherwise not at all.
+ */
+export function yearsOfExperience(
+  positions: Position[],
+  education: Resume["education"],
+  countsInternships: boolean,
+  now = new Date(),
+): number {
+  const internship = Number(countsInternships);
   const months = new Map<number, number>();
   for (const p of positions) {
     const until = studentUntil(p, education);
+    const weight = p.kind === "internship" ? internship : p.kind === "part_time" ? PART_TIME_WEIGHT : 1;
     for (let m = toMonth(p.start), end = endMonth(p, now); m <= end; m++) {
-      months.set(m, Math.max(months.get(m) ?? 0, KIND_WEIGHT[m <= until ? "internship" : p.kind]));
+      months.set(m, Math.max(months.get(m) ?? 0, m <= until ? Math.min(weight, internship) : weight));
     }
   }
   return [...months.values()].reduce((a, b) => a + b, 0) / 12;
@@ -57,9 +67,10 @@ export function yearsOfExperience(positions: Position[], education: Resume["educ
 
 export function match(resume: Resume, job: Job, now = new Date()) {
   const isRelevant = (p: Position) => job.family === "other" || p.family === job.family;
-  const totalYears = yearsOfExperience(resume.positions, resume.education, now);
-  const years = yearsOfExperience(resume.positions.filter(isRelevant), resume.education, now);
   const exp = job.experience?.paths.length ? job.experience : null;
+  const countsInternships = exp?.countsInternships ?? false;
+  const totalYears = yearsOfExperience(resume.positions, resume.education, countsInternships, now);
+  const years = yearsOfExperience(resume.positions.filter(isRelevant), resume.education, countsInternships, now);
   const [impliedMin, impliedMax] = IMPLIED_RANGE[job.seniority];
 
   // The candidate meets the lowest bar among paths their degree qualifies for, else the lowest-degree path.
@@ -89,10 +100,12 @@ export function match(resume: Resume, job: Job, now = new Date()) {
 
   function counted(p: Position): string {
     if (!isRelevant(p)) return `No, ${p.family.replace("_", " ")}`;
-    if (p.kind === "internship" || p.kind === "part_time") return `Half, ${p.kind.replace("_", "-")}`;
+    if (p.kind === "internship") return countsInternships ? "Yes, posting counts internships" : "No, internship";
+    const partTime = p.kind === "part_time";
     const until = studentUntil(p, resume.education);
-    if (until < toMonth(p.start)) return "Yes";
-    return endMonth(p, now) <= until ? "Half, while studying" : `Half while studying, full from ${formatMonth(until + 1)}`;
+    if (until < toMonth(p.start) || countsInternships) return partTime ? "Half, part-time" : "Yes";
+    if (endMonth(p, now) <= until) return "No, while studying";
+    return `${partTime ? "Half" : "Yes"} from ${formatMonth(until + 1)}, not while studying`;
   }
 
   function explain(): string[] {
@@ -109,6 +122,7 @@ export function match(resume: Resume, job: Job, now = new Date()) {
       reasons.push(`Your ${resume.highestDegree} degree lowers the bar to ${formatYears(minYears)}.`);
     }
     if (exp?.flexible) reasons.push("The posting says it is flexible on experience.");
+    if (countsInternships) reasons.push("The posting counts internships toward the years.");
     if (years < minYears) reasons.push(`${formatYears(minYears - years)} short.`);
     else if (maxYears !== null && years > maxYears) reasons.push(`${formatYears(years - maxYears)} above the range.`);
     else reasons.push("Within range.");

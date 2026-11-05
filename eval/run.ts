@@ -17,6 +17,7 @@ const results = await Promise.all(
       maxYears: exp?.maxYears,
       required: exp?.required,
       flexible: exp?.flexible,
+      countsInternships: exp?.countsInternships,
     };
     const misses = Object.entries(expect)
       .filter(([k, v]) => !isDeepStrictEqual(got[k], v))

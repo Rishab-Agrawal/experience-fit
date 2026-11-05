@@ -18,7 +18,7 @@ The LLM (Claude Haiku 5.5) only extracts facts, with structured outputs (`src/ex
 
 ### Scoring rules
 
-- **Relevant years.** Only roles in the job's family count (software engineering, data science, product, design). Overlapping roles count once per month. Internships and part-time roles count half. So do roles started during a bachelor's or master's, except in the degree's final year; a job held before enrolling counts in full. Year-only degree dates are read as the shortest program they allow, and without degree dates this rule is skipped.
+- **Relevant years.** Only roles in the job's family count (software engineering, data science, product, design). Overlapping roles count once per month. Part-time roles count half. Internships count only when the posting says they do, and so do roles started during a bachelor's or master's, except in the degree's final year; a job held before enrolling counts in full. Year-only degree dates are read as the shortest program they allow, and without degree dates this rule is skipped.
 - **Requirement.** Takes the lowest bar among the degree paths the candidate qualifies for. With no stated years, a range is assumed from the title (for example, 5+ for senior). An entry-level title also caps a bare "0+ years".
 - **Shortfall.** Measured relative to the requirement (1 year short of 2 is worse than 1 short of 8) and penalized quadratically. Small gaps cost little; large ones cost a lot. Tolerance widens for "preferred" and again for postings that state flexibility.
 - **Overqualification.** Penalized more gently than a shortfall.
@@ -34,9 +34,9 @@ The LLM (Claude Haiku 5.5) only extracts facts, with structured outputs (`src/ex
 
 ## Eval
 
-`eval/cases.json` holds the posting phrasings that break naive parsing: ranges, "ideally", degree paths, title-only, new grad, "equivalent practical experience" (a degree substitution, not flexibility on years), per-skill sub-requirements, and "apply even if you don't meet every requirement". It also checks that the quoted requirement really appears in the posting.
+`eval/cases.json` holds the posting phrasings that break naive parsing: ranges, "ideally", degree paths, title-only, new grad, "equivalent practical experience" (a degree substitution, not flexibility on years), per-skill sub-requirements, "apply even if you don't meet every requirement", and whether internships count. It also checks that the quoted requirement really appears in the posting.
 
-Haiku 5.5 and Sonnet 5.5 both pass 11/11, and they extracted the same work history from a test resume. Haiku runs at about 1/20 of the cost.
+Haiku 5.5 passes 14/14. Sonnet 5.5 matched it on the first 11 cases and on a test resume, at about 20 times the cost.
 
 ```
 npm run eval

@@ -2,7 +2,7 @@
   {
     "name": "range",
     "text": "Backend Engineer\nRequirements:\n- 3-5 years of professional software engineering experience\n- Strong Python and SQL",
-    "expect": { "family": "software_engineering", "minYears": 3, "maxYears": 5, "required": true, "flexible": false }
+    "expect": { "family": "software_engineering", "minYears": 3, "maxYears": 5, "required": true, "flexible": false, "countsInternships": false }
   },
   {
     "name": "explicit exception",
@@ -53,5 +53,20 @@
     "name": "founding engineer",
     "text": "Founding Engineer\nWhat we're looking for:\n- 3+ years building and shipping production software, ideally at an early-stage startup or in a role with broad ownership\n- Strong full-stack skills, from the database to the UI",
     "expect": { "family": "software_engineering", "minYears": 3, "required": true }
+  },
+  {
+    "name": "internships count",
+    "text": "Software Engineer I\nQualifications: 1+ years of software development experience (internships and co-ops count).",
+    "expect": { "minYears": 1, "countsInternships": true }
+  },
+  {
+    "name": "full-time only",
+    "text": "Backend Engineer\n3+ years of full-time industry experience, not including internships.",
+    "expect": { "minYears": 3, "countsInternships": false }
+  },
+  {
+    "name": "school work counts",
+    "text": "Machine Learning Engineer\n2+ years of experience training models. Experience from research labs or projects during your degree counts toward this.",
+    "expect": { "minYears": 2, "countsInternships": true }
   }
 ]
