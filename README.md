@@ -2,6 +2,8 @@
 
 Scores how well a resume's years of experience fit a job posting, accounting for how postings are written: a "3–5 years" range can still consider 2, "5+ preferred" is softer than "5+ required", "BS + 5 or MS + 3" depends on your degree, and "exceptional candidates with fewer years will be considered" means what it says.
 
+Try it: https://expfit.up.railway.app
+
 ## How it works
 
 ```
@@ -58,7 +60,7 @@ npm test           # scoring unit tests
 npm run check      # typecheck
 ```
 
-API: `POST /api/match` with `{ resumeText | resumePdf (base64), jobText | jobUrl }`. The demo allows 30 checks per day in total.
+API: `POST /api/match` with `{ resumeText | resumePdf (base64), jobText | jobUrl }`. The demo allows 30 checks per day in total. With `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` set, each check is also sent to that Telegram chat.
 
 ## Not covered
 

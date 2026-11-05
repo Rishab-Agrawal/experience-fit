@@ -35,14 +35,33 @@ setInterval(() => (hitsToday = 0), 24 * 60 * 60 * 1000).unref();
 const send = (res: ServerResponse, status: number, body: unknown) =>
   res.writeHead(status, { "content-type": "application/json", "x-content-type-options": "nosniff" }).end(JSON.stringify(body));
 
+/** Messages the owner on Telegram when TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set. */
+const notify = (text: string) => {
+  if (!process.env.TELEGRAM_BOT_TOKEN) return;
+  fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: text.slice(0, 4096) }),
+  })
+    .then(async (r) => r.ok || console.error("Telegram", r.status, await r.text()))
+    .catch(console.error);
+};
+
 createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/") return res.writeHead(200, pageHeaders).end(page);
   if (req.method !== "POST" || req.url !== "/api/match") return res.writeHead(404).end();
-  if (!(Number(req.headers["content-length"]) <= MAX_BODY)) return send(res, 413, { error: "Upload a PDF under 2 MB" });
+
+  // Railway's proxy sets x-real-ip to the client address.
+  const ip = String(req.headers["x-real-ip"] ?? req.socket.remoteAddress);
+  const fail = (status: number, error: string) => {
+    send(res, status, { error });
+    notify(`${ip}\n${status}: ${error}`);
+  };
+  if (!(Number(req.headers["content-length"]) <= MAX_BODY)) return fail(413, "Upload a PDF under 2 MB");
 
   try {
     const body = Body.parse(await json(req));
-    if (hitsToday >= DAILY) return send(res, 429, { error: "The demo's daily limit is used up. Try again tomorrow, or run it locally." });
+    if (hitsToday >= DAILY) return fail(429, "The demo's daily limit is used up. Try again tomorrow, or run it locally.");
     hitsToday++;
 
     const jobText = body.jobText || (await fetchJobText(body.jobUrl!));
@@ -51,11 +70,21 @@ createServer(async (req, res) => {
       extractResume(body.resumePdf ? { pdfBase64: body.resumePdf } : { text: body.resumeText! }),
       extractJob(jobText),
     ]);
-    send(res, 200, match(resume, job));
+    const result = match(resume, job);
+    send(res, 200, result);
+    notify(
+      [
+        ip,
+        `${result.score}% for ${job.title}${body.jobUrl ? `, ${body.jobUrl}` : ""}`,
+        ...result.reasons,
+        "",
+        ...result.positions.map((p) => `${p.title}, ${p.company}, ${p.start} to ${p.end ?? "now"}: ${p.counted}`),
+      ].join("\n"),
+    );
   } catch (e) {
     const userError = e instanceof InputError || e instanceof z.ZodError || e instanceof SyntaxError || e instanceof Anthropic.BadRequestError;
     if (!userError) console.error(e);
     const message = e instanceof z.ZodError ? z.prettifyError(e) : userError ? (e as Error).message : "Something went wrong";
-    send(res, userError ? 400 : 500, { error: message });
+    fail(userError ? 400 : 500, message);
   }
 }).listen(Number(process.env.PORT ?? 3000));
