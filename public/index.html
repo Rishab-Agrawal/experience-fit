@@ -165,13 +165,12 @@ $("form").addEventListener("submit", async (event) => {
   }
 });
 
-function render({ score, years, minYears, maxYears, reasons, resume, job }) {
+function render({ score, years, minYears, maxYears, reasons, positions }) {
   const end = Math.max(10, Math.ceil(Math.max(years, maxYears ?? minYears) + 2));
   const pct = (y) => `${(Math.min(y, end) / end) * 100}%`;
   const step = end > 14 ? 5 : 2;
   const ticks = Array.from({ length: Math.floor(end / step) + 1 }, (_, i) => i * step);
   const range = `${minYears}${maxYears === null ? "+" : `–${maxYears}`}`;
-  const counted = (p) => job.family === "other" || p.family === job.family;
 
   $("result").innerHTML = `
     <div class="verdict">
@@ -187,11 +186,11 @@ function render({ score, years, minYears, maxYears, reasons, resume, job }) {
       <summary>What was counted</summary>
       <div class="table-wrap"><table>
         <thead><tr><th>Role</th><th>Dates</th><th>Counted</th></tr></thead>
-        <tbody>${resume.positions.map((p) => `
-          <tr class="${counted(p) ? "" : "skip"}">
+        <tbody>${positions.map((p) => `
+          <tr class="${p.counted.startsWith("No") ? "skip" : ""}">
             <td>${esc(p.title)}, ${esc(p.company)}</td>
             <td class="num">${esc(p.start)} to ${esc(p.end ?? "now")}</td>
-            <td>${!counted(p) ? `No, ${esc(p.family.replace("_", " "))}` : p.kind === "part_time" || p.kind === "internship" ? `Half, ${esc(p.kind.replace("_", "-"))}` : "Yes"}</td>
+            <td>${esc(p.counted)}</td>
           </tr>`).join("")}
         </tbody>
       </table></div>

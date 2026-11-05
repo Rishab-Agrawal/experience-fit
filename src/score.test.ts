@@ -11,6 +11,7 @@ const swe = (start: string, end: string | null, kind: Resume["positions"][number
 
 const resume = (years: number, highestDegree: Resume["highestDegree"] = "bachelors"): Resume => ({
   highestDegree,
+  education: [],
   positions: [swe(`${2026 - years}-12`, null)],
 });
 
@@ -33,11 +34,24 @@ const score = (r: Resume, j: Job) => match(r, j, now).score;
 test("overlapping roles count once, internships half, current roles up to now", () => {
   const positions = [swe("2024-01", "2024-12"), swe("2024-07", "2025-06"), swe("2023-01", "2023-12", "internship"), swe("2026-06", null)];
   // 2024-01..2025-06 = 18 months, internship 12 × 0.5 = 6, 2026-06..2026-11 = 6 → 30 months
-  assert.equal(yearsOfExperience(positions, now), 2.5);
+  assert.equal(yearsOfExperience(positions, [], now), 2.5);
+});
+
+test("roles started during a bachelor's or master's count half until its final year", () => {
+  const education: Resume["education"] = [{ degree: "bachelors", start: "2020-09", end: "2024-05" }];
+  // Final year 2023-06..2024-05: 24 student months × 0.5 + 12 → 2 years
+  assert.equal(yearsOfExperience([swe("2021-06", "2024-05")], education, now), 2);
+  assert.equal(yearsOfExperience([swe("2019-06", "2021-05")], education, now), 2); // held before enrolling
+  assert.equal(yearsOfExperience([swe("2021-06", "2024-05")], [{ ...education[0], degree: "phd" }], now), 3);
+  const r: Resume = { highestDegree: "bachelors", education, positions: [swe("2021-06", "2024-05"), swe("2022-01", "2022-12")] };
+  assert.deepEqual(
+    match(r, job({}), now).positions.map((p) => p.counted),
+    ["Half while studying, full from Jun 2023","Half, while studying"],
+  );
 });
 
 test("only roles in the job's family count as relevant", () => {
-  const r: Resume = { highestDegree: "bachelors", positions: [swe("2024-12", null), { ...swe("2020-11", "2024-10"), family: "design" }] };
+  const r: Resume = { highestDegree: "bachelors", education: [], positions: [swe("2024-12", null), { ...swe("2020-11", "2024-10"), family: "design" }] };
   const m = match(r, job({ paths: [{ degree: "none", minYears: 2 }] }), now);
   assert.deepEqual([m.years, m.totalYears, m.score], [2, 6, 100]);
 });

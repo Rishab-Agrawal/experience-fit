@@ -25,22 +25,40 @@ const toMonth = (yyyyMm: string) => {
   const [y, m] = yyyyMm.split("-").map(Number);
   return y * 12 + m - 1;
 };
+const formatMonth = (m: number) =>
+  new Date(Math.floor(m / 12), m % 12).toLocaleString("en-US", { month: "short", year: "numeric" });
+const currentMonth = (now: Date) => now.getFullYear() * 12 + now.getMonth();
+const endMonth = (p: Position, now: Date) => Math.min(p.end ? toMonth(p.end) : currentMonth(now), currentMonth(now));
+
+/**
+ * A role started during a bachelor's or master's counts as an internship until the degree's final year.
+ * Returns the last such month, or -Infinity. A role held before enrolling counts as stated.
+ */
+function studentUntil(p: Position, education: Resume["education"]): number {
+  const start = toMonth(p.start);
+  return Math.max(
+    ...education
+      .filter((e) => (e.degree === "bachelors" || e.degree === "masters") && toMonth(e.start) <= start)
+      .map((e) => toMonth(e.end) - 12),
+  );
+}
 
 /** Experience-weighted years, counting each calendar month once even when roles overlap. */
-export function yearsOfExperience(positions: Position[], now = new Date()): number {
-  const nowMonth = now.getFullYear() * 12 + now.getMonth();
+export function yearsOfExperience(positions: Position[], education: Resume["education"], now = new Date()): number {
   const months = new Map<number, number>();
   for (const p of positions) {
-    const end = Math.min(p.end ? toMonth(p.end) : nowMonth, nowMonth);
-    for (let m = toMonth(p.start); m <= end; m++) months.set(m, Math.max(months.get(m) ?? 0, KIND_WEIGHT[p.kind]));
+    const until = studentUntil(p, education);
+    for (let m = toMonth(p.start), end = endMonth(p, now); m <= end; m++) {
+      months.set(m, Math.max(months.get(m) ?? 0, KIND_WEIGHT[m <= until ? "internship" : p.kind]));
+    }
   }
   return [...months.values()].reduce((a, b) => a + b, 0) / 12;
 }
 
 export function match(resume: Resume, job: Job, now = new Date()) {
-  const totalYears = yearsOfExperience(resume.positions, now);
-  const relevant = job.family === "other" ? resume.positions : resume.positions.filter((p) => p.family === job.family);
-  const years = yearsOfExperience(relevant, now);
+  const isRelevant = (p: Position) => job.family === "other" || p.family === job.family;
+  const totalYears = yearsOfExperience(resume.positions, resume.education, now);
+  const years = yearsOfExperience(resume.positions.filter(isRelevant), resume.education, now);
   const exp = job.experience?.paths.length ? job.experience : null;
   const [impliedMin, impliedMax] = IMPLIED_RANGE[job.seniority];
 
@@ -66,7 +84,16 @@ export function match(resume: Resume, job: Job, now = new Date()) {
     minYears,
     maxYears,
     reasons: explain(),
+    positions: resume.positions.map((p) => ({ ...p, counted: counted(p) })),
   };
+
+  function counted(p: Position): string {
+    if (!isRelevant(p)) return `No, ${p.family.replace("_", " ")}`;
+    if (p.kind === "internship" || p.kind === "part_time") return `Half, ${p.kind.replace("_", "-")}`;
+    const until = studentUntil(p, resume.education);
+    if (until < toMonth(p.start)) return "Yes";
+    return endMonth(p, now) <= until ? "Half, while studying" : `Half while studying, full from ${formatMonth(until + 1)}`;
+  }
 
   function explain(): string[] {
     const asked = paths[0]?.minYears ?? minYears;

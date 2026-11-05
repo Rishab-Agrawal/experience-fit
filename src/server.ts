@@ -51,7 +51,7 @@ createServer(async (req, res) => {
       extractResume(body.resumePdf ? { pdfBase64: body.resumePdf } : { text: body.resumeText! }),
       extractJob(jobText),
     ]);
-    send(res, 200, { ...match(resume, job), resume, job });
+    send(res, 200, match(resume, job));
   } catch (e) {
     const userError = e instanceof InputError || e instanceof z.ZodError || e instanceof SyntaxError || e instanceof Anthropic.BadRequestError;
     if (!userError) console.error(e);

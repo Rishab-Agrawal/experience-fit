@@ -16,6 +16,12 @@ const Month = z.string().regex(/^\d{4}-\d{2}$/).describe("YYYY-MM");
 
 export const Resume = z.object({
   highestDegree: Degree.describe("Highest degree completed"),
+  education: z
+    .array(z.object({ degree: Degree, start: Month, end: Month.describe("Graduation, actual or expected") }))
+    .describe(
+      "Degree programs with both a start and an end date on the resume. " +
+        "When a date has only a year, assume the shortest program: December of the start year, January of the end year.",
+    ),
   positions: z.array(
     z.object({
       title: z.string(),
@@ -76,8 +82,9 @@ async function extract<S extends z.ZodType>(
 export function extractResume(resume: { pdfBase64: string } | { text: string }): Promise<Resume> {
   return extract(
     Resume,
-    "Extract the work history from this resume. Include jobs, internships, co-ops, contract work, and research or teaching assistantships. " +
-      "Exclude education, personal projects, and volunteering. If a date has only a year, use January for a start and December for an end.",
+    "Extract the work history and degree programs from this resume. Work history includes jobs, internships, co-ops, contract work, " +
+      "and research or teaching assistantships, not education, personal projects, or volunteering. " +
+      "For a role, if a date has only a year, use January for a start and December for an end.",
     [
       "pdfBase64" in resume
         ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: resume.pdfBase64 } }
