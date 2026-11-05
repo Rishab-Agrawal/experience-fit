@@ -5,7 +5,8 @@ type Degree = Resume["highestDegree"];
 
 // ponytail: hand-set priors. Calibrate against reply/interview rates per experience gap once outcome data is joined in.
 const PART_TIME_WEIGHT = 0.5;
-const UNDER_TOLERANCE = { required: 0.6, preferred: 0.9, flexibleBonus: 0.3 };
+const ZERO_AT_SHORTFALL = 0.6; // 60% short of the asked years scores 0, however the posting is worded
+const SHORTFALL_EXPONENT = { required: 1.5, preferred: 2, flexibleBonus: 0.75 }; // higher forgives near misses more
 const OVER_TOLERANCE = 1.5;
 
 // Applied when the posting states no years, and as the cap when it states only a minimum.
@@ -80,12 +81,12 @@ export function match(resume: Resume, job: Job, now = new Date()) {
   const minYears = exp ? Math.min(...(eligible.length ? eligible : paths.slice(0, 1)).map((p) => p.minYears)) : impliedMin;
   const maxYears = exp?.maxYears ?? impliedMax;
 
-  let tolerance = exp?.required ? UNDER_TOLERANCE.required : UNDER_TOLERANCE.preferred;
-  if (exp?.flexible) tolerance += UNDER_TOLERANCE.flexibleBonus;
+  let exponent = exp?.required ? SHORTFALL_EXPONENT.required : SHORTFALL_EXPONENT.preferred;
+  if (exp?.flexible) exponent += SHORTFALL_EXPONENT.flexibleBonus;
 
   // Gaps are relative (1 year short of 2 hurts more than of 8), floored at 2 years so tiny minimums don't explode.
   let fit = 1;
-  if (years < minYears) fit = 1 - ((minYears - years) / Math.max(minYears, 2) / tolerance) ** 2;
+  if (years < minYears) fit = 1 - ((minYears - years) / Math.max(minYears, 2) / ZERO_AT_SHORTFALL) ** exponent;
   else if (maxYears !== null && years > maxYears) fit = 1 - ((years - maxYears) / Math.max(maxYears, 2) / OVER_TOLERANCE) ** 2;
 
   return {

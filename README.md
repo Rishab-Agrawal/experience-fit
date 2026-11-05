@@ -22,17 +22,18 @@ The LLM (Claude Haiku 5.5) only extracts facts, with structured outputs (`src/ex
 
 - **Relevant years.** Only roles in the job's family count (software engineering, data science, product, design). Overlapping roles count once per month. Part-time roles count half. Internships count only when the posting says they do, and so do roles started during a bachelor's or master's, except in the degree's final year; a job held before enrolling counts in full. Year-only degree dates are read as the shortest program they allow, and without degree dates this rule is skipped.
 - **Requirement.** Takes the lowest bar among the degree paths the candidate qualifies for. With no stated years, a range is assumed from the title (for example, 5+ for senior). An entry-level title also caps a bare "0+ years".
-- **Shortfall.** Measured relative to the requirement (1 year short of 2 is worse than 1 short of 8) and penalized quadratically. Small gaps cost little; large ones cost a lot. Tolerance widens for "preferred" and again for postings that state flexibility.
+- **Shortfall.** Measured relative to the requirement (1 year short of 2 is worse than 1 short of 8). The score falls along a curve that reaches 0 at 60% short. "Preferred" wording, and again stated flexibility, flatten the curve near the requirement so near misses cost less, but the zero stays put: no wording makes 3 years fit an 8+ role.
 - **Overqualification.** Penalized more gently than a shortfall.
 
 | Candidate | Posting | Score |
 |---|---|---|
-| 2 years | 3–5 years, required | 69 |
-| 3 years | 5+ years, required | 56 |
-| 3 years | 5+ years, flexible | 80 |
+| 2 years | 3–5 years, required | 59 |
+| 3 years | 5+ years, required | 46 |
+| 3 years | 5+ years, flexible | 60 |
 | 3 years, MS | BS + 5 or MS + 3 | 100 |
-| 1 year | "Senior Engineer", no years stated | 21 |
+| 1 year | "Senior Engineer", no years stated | 0 |
 | 6 years | 3–5 years | 98 |
+| 3 years | 8+ years, preferred, flexible | 0 |
 
 ## Eval
 

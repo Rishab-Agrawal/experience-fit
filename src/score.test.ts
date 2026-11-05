@@ -62,13 +62,15 @@ test("only roles in the job's family count as relevant", () => {
 
 test("within range scores 100; shortfalls are soft and ordered by strictness", () => {
   assert.equal(score(resume(4), job({ maxYears: 5 })), 100);
-  assert.equal(score(resume(2), job({ maxYears: 5 })), 69); // 2 for "3–5 years"
+  assert.equal(score(resume(2), job({ maxYears: 5 })), 59); // 2 for "3–5 years"
   const five = { paths: [{ degree: "none" as const, minYears: 5 }] };
   const required = score(resume(3), job(five));
   const preferred = score(resume(3), job({ ...five, required: false }));
   const flexible = score(resume(3), job({ ...five, flexible: true }));
   assert.ok(required < preferred && required < flexible, `${required} ${preferred} ${flexible}`);
   assert.equal(score(resume(0), job({})), 0);
+  // Soft wording forgives near misses, never a large gap
+  assert.equal(score(resume(3), job({ paths: [{ degree: "none", minYears: 8 }], required: false, flexible: true })), 0);
 });
 
 test("a qualifying degree path lowers the bar", () => {
